@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare AI - Medicine Safety</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">✚</div>
+                <div>
+                    <h2>HealthCare AI</h2>
+                    <span>Smart Health System</span>
+                </div>
+            </div>
+
+            <nav>
+                <button class="nav-item active">
+                    <span>▦</span>
+                    Dashboard
+                </button>
+
+                <button class="nav-item">
+                    <span>♟</span>
+                    Patients
+                </button>
+
+                <button class="nav-item">
+                    <span>💊</span>
+                    Medicines
+                </button>
+
+                <button class="nav-item">
+                    <span>⚠</span>
+                    Medicine Safety
+                </button>
+
+                <button class="nav-item">
+                    <span>◉</span>
+                    Predictions
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span>Database</span>
+                <strong>● Oracle Connected</strong>
+            </div>
+        </aside>
+
+
+        <!-- Main content -->
+        <main class="main">
+
+            <!-- Header -->
+            <header class="header">
+                <div>
+                    <p class="eyebrow">MEDICINE SAFETY</p>
+                    <h1>Safety Dashboard</h1>
+                </div>
+
+                <div class="header-right">
+                    <span class="status-dot"></span>
+                    <span>System Online</span>
+                    <div class="profile">IM</div>
+                </div>
+            </header>
+
+
+            <!-- Patient selection -->
+            <section class="patient-bar">
+
+                <div>
+                    <label>SELECT PATIENT</label>
+                    <select id="patientSelect">
+                        <option value="P101">P101 — Rahul</option>
+                    </select>
+                </div>
+
+                <div class="patient-info">
+                    <strong>Rahul</strong>
+                    <span>52 years • Male</span>
+                </div>
+
+                <div class="patient-info">
+                    <strong>Diabetes Risk</strong>
+                    <span class="high-text">87.5% — HIGH</span>
+                </div>
+
+            </section>
+
+
+            <!-- Statistics -->
+            <section class="stats">
+
+                <div class="stat-card">
+                    <div class="stat-icon">💊</div>
+                    <div>
+                        <span>Active Medicines</span>
+                        <strong id="medicineCount">1</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">⚠</div>
+                    <div>
+                        <span>Known Allergies</span>
+                        <strong id="allergyCount">1</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon danger">!</div>
+                    <div>
+                        <span>Safety Risk</span>
+                        <strong id="riskScore">40</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon safe">✓</div>
+                    <div>
+                        <span>System Status</span>
+                        <strong class="safe-text">Active</strong>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- Main grid -->
+            <section class="content-grid">
+
+                <!-- Medicine checker -->
+                <div class="card checker">
+
+                    <div class="card-header">
+                        <div>
+                            <p class="eyebrow">SAFETY CHECK</p>
+                            <h2>Check a Medicine</h2>
+                        </div>
+
+                        <span class="shield">✓</span>
+                    </div>
+
+                    <p class="description">
+                        Check a proposed medicine for interactions, allergies,
+                        duplicate medication and dosage risks.
+                    </p>
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label>MEDICINE</label>
+                            <select id="medicineSelect">
+                                <option value="Metformin">Metformin</option>
+                                <option value="Aspirin">Aspirin</option>
+                                <option value="Amoxicillin">Amoxicillin</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>DOSAGE</label>
+                            <input
+                                type="text"
+                                id="dosageInput"
+                                placeholder="e.g. 500 mg"
+                                value="1000 mg"
+                            >
+                        </div>
+
+                    </div>
+
+                    <button class="check-button" onclick="checkMedicineSafety()">
+                        CHECK MEDICINE SAFETY
+                        <span>→</span>
+                    </button>
+
+                </div>
+
+
+                <!-- Risk score -->
+                <div class="card risk-card">
+
+                    <p class="eyebrow">SAFETY SCORE</p>
+
+                    <div class="risk-number">
+                        <span id="displayScore">40</span>
+                        <small>/100</small>
+                    </div>
+
+                    <div class="risk-level medium" id="riskLevel">
+                        MEDIUM RISK
+                    </div>
+
+                    <div class="score-bar">
+                        <div class="score-fill" id="scoreFill"></div>
+                    </div>
+
+                    <p class="risk-description" id="riskDescription">
+                        Some safety concerns were detected.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- Alerts -->
+            <section class="card alerts-card">
+
+                <div class="card-header">
+                    <div>
+                        <p class="eyebrow">SAFETY ANALYSIS</p>
+                        <h2>Detected Issues</h2>
+                    </div>
+
+                    <span class="alert-count" id="alertCount">2 issues</span>
+                </div>
+
+                <div id="alertsContainer">
+
+                    <div class="alert-item warning-alert">
+                        <div class="alert-symbol">⚠</div>
+                        <div>
+                            <strong>Duplicate medication</strong>
+                            <p>Patient is already taking Metformin.</p>
+                        </div>
+                        <span class="severity medium-label">MEDIUM</span>
+                    </div>
+
+                    <div class="alert-item warning-alert">
+                        <div class="alert-symbol">⚠</div>
+                        <div>
+                            <strong>Dosage risk</strong>
+                            <p>Entered dosage (1000 mg) exceeds standard dosage (500 mg).</p>
+                        </div>
+                        <span class="severity medium-label">MEDIUM</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- Current medicines + allergies -->
+            <section class="bottom-grid">
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <div>
+                            <p class="eyebrow">CURRENT MEDICATION</p>
+                            <h2>Patient Medicines</h2>
+                        </div>
+                    </div>
+
+                    <div class="medicine-row">
+                        <div class="medicine-icon">💊</div>
+                        <div>
+                            <strong>Metformin</strong>
+                            <span>Antidiabetic</span>
+                        </div>
+                        <b>500 mg</b>
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <div>
+                            <p class="eyebrow">PATIENT HISTORY</p>
+                            <h2>Allergies</h2>
+                        </div>
+                    </div>
+
+                    <div class="allergy-row">
+                        <div class="allergy-icon">!</div>
+                        <div>
+                            <strong>Penicillin</strong>
+                            <span>Known allergy</span>
+                        </div>
+                        <b class="high-label">HIGH</b>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
