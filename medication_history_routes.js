@@ -2,6 +2,7 @@
 // Doctor-only educational timeline API. The two datasets are NEVER joined by ID.
 const oracledb = require('oracledb');
 const { validateProposal, summarizeHistory } = require('./medication_history_core');
+const { checkPairs } = require('./interaction_reference');
 
 const DEMO_IDS = new Set(['P101', 'P102', 'P103', 'P104']);
 const PYTHON_API = 'http://127.0.0.1:8000';
@@ -149,9 +150,12 @@ module.exports = function registerMedicationHistoryRoutes(app) {
           return res.status(404).json({success:false, error:'Fictional patient not found'});
         }
         const records = await queryOracleHistory(connection, proposal.patientId);
+        const timeline = summarizeHistory(records, proposal);
+        const referenceReview = checkPairs(proposal.medicineName,
+          timeline.completeOverlaps, timeline.uncertainPeriods);
         res.set('Cache-Control','no-store');
         return res.json({success:true, source:'oracle_fictional_demo',
-          ...summarizeHistory(records, proposal), disclaimer:DISCLAIMER});
+          ...timeline, referenceReview, disclaimer:DISCLAIMER});
       });
     }
     if (source === 'mimic') {
@@ -182,6 +186,9 @@ module.exports = function registerMedicationHistoryRoutes(app) {
             completeOverlaps:r.body.overlaps,
             overlapsTruncated:r.body.overlaps_truncated,
             incompletePeriodsExcluded:true,
+            referenceReview: checkPairs(medicineName, r.body.overlaps || [], [], {
+              incompletePeriodsExcluded:true, overlapsTruncated:!!r.body.overlaps_truncated
+            }),
             interactionAssessment:'NOT_PERFORMED_NO_VERIFIED_REFERENCE',
             allergyAssessment:'NOT_PERFORMED',
             dosageAssessment:'NOT_PERFORMED',

@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "reviewed_pairs": [],
+  "about": "Empty by design. Existing fictional Oracle DRUG_INTERACTION rows are NOT validated clinical evidence. Add a source-checked record only after authorized faculty/clinical review. An empty registry never means safe."
+}
