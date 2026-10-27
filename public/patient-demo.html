@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patient Records | Healthcare Research Demo</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#18243b;background:#f3f6fb}
+    *{box-sizing:border-box} body{margin:0}header{background:#182c52;color:white;padding:22px max(20px,calc((100vw - 1050px)/2))}
+    header h1{margin:0 0 6px;font-size:23px}header p{margin:0;color:#dde7fb;font-size:14px}
+    main{max-width:1050px;margin:24px auto;padding:0 16px 32px} .card{background:white;border:1px solid #d9e2f0;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 3px 15px #17294d0b}
+    h2{font-size:18px;margin:0 0 14px} .top{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+    label{font-size:13px;font-weight:650;display:block;margin-bottom:6px}select,button{padding:11px 13px;border-radius:8px;font-size:15px}
+    select{border:1px solid #aebfdc;background:white;min-width:220px}button{border:0;background:#345fba;color:white;font-weight:650;cursor:pointer}
+    .hint,.small{color:#52617b;font-size:13px}.small{margin:8px 0}.error{color:#a02335}.status{min-height:20px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px} .grid .card{margin:0}
+    table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:9px 7px;text-align:left;border-bottom:1px solid #e6ebf3;vertical-align:top}th{color:#465778;font-weight:650}
+    .scroll{overflow-x:auto}.empty{color:#687792;font-size:13px}.links a{color:#d8e7ff;margin-right:16px} .notice{padding:13px;background:#fff6e9;border:1px solid #ead5ab;border-radius:9px;color:#60400f;font-size:13px}
+  </style>
+</head>
+<body>
+  <header><h1>Patient records — research demo</h1><p>Oracle-backed fictional records. No sign-in or real-patient access.</p>
+    <nav class="links"><a href="/doctor-research-demo.html">Doctor research demo</a><a href="/lab-demo.html">Lab technician demo</a></nav>
+  </header>
+  <main>
+    <div class="notice">Local demonstration only. Patient selection is not authentication. Do not enter or display real patient information.</div>
+    <section class="card">
+      <div class="top"><div><label for="patient">Fictional patient</label><select id="patient"><option value="">Loading...</option></select></div><button id="load">View records</button></div>
+      <p id="status" class="status small" role="status"></p>
+    </section>
+    <section class="card" id="profile" hidden><h2>Patient profile</h2><div id="summary"></div></section>
+    <div class="grid" id="sections" hidden>
+      <section class="card"><h2>Laboratory reports</h2><div class="scroll" id="labs"></div></section>
+      <section class="card"><h2>Medication prescriptions</h2><div class="scroll" id="medications"></div></section>
+      <section class="card"><h2>Medical history</h2><div class="scroll" id="history"></div></section>
+      <section class="card"><h2>Recorded diagnoses</h2><div class="scroll" id="diagnoses"></div></section>
+      <section class="card"><h2>Allergies</h2><div class="scroll" id="allergies"></div></section>
+      <section class="card"><h2>Symptoms</h2><div class="scroll" id="symptoms"></div></section>
+      <section class="card"><h2>Illustrative stored predictions</h2><p class="hint">These entries are fictional seed data, NOT predictions from your trained AI models.</p><div class="scroll" id="predictions"></div></section>
+    </div>
+  </main>
+  <script>
+    const byId=id=>document.getElementById(id);
+    function renderTable(target, items, fields){
+      const host=byId(target);host.replaceChildren();
+      if(!items?.length){const p=document.createElement('p');p.className='empty';p.textContent='No records in the demo database.';host.append(p);return;}
+      const table=document.createElement('table'),head=document.createElement('thead'),tr=document.createElement('tr');
+      for(const [key,label] of fields){const th=document.createElement('th');th.textContent=label;tr.append(th);}head.append(tr);table.append(head);
+      const body=document.createElement('tbody');
+      for(const item of items){const row=document.createElement('tr');for(const [key] of fields){const td=document.createElement('td');td.textContent=item[key]??'—';row.append(td);}body.append(row);}
+      table.append(body);host.append(table);
+    }
+    async function api(url){const r=await fetch(url);const data=await r.json();if(!r.ok||!data.success)throw Error(data.error||'Request failed');return data;}
+    async function loadPatients(){try{
+      const data=await api('/api/demo/patients');const sel=byId('patient');sel.replaceChildren();
+      for(const p of data.patients){const opt=document.createElement('option');opt.value=p.id;opt.textContent=`${p.id} — ${p.name}`;sel.append(opt);}
+      if(data.patients.length)await loadRecords();
+    }catch(e){byId('status').textContent=e.message;byId('status').className='status error';}}
+    async function loadRecords(){const id=byId('patient').value;if(!id)return;
+      byId('status').textContent='Loading demo records...';byId('status').className='status small';
+      try{const d=await api(`/api/demo/patients/${encodeURIComponent(id)}`);
+        byId('summary').textContent=`${d.patient.id} — ${d.patient.name} · Age ${d.patient.age??'—'} · ${d.patient.gender??'—'}`;
+        renderTable('labs',d.labs,[['testDate','Test date'],['glucose','Glucose'],['bloodPressure','BP'],['bmi','BMI'],['cholesterol','Cholesterol'],['heartRate','Heart rate']]);
+        renderTable('medications',d.medications,[['medicine','Medicine'],['dosage','Recorded dose'],['startDate','Start'],['endDate','End']]);
+        renderTable('history',d.history,[['condition','Condition'],['date','Date'],['description','Notes']]);
+        renderTable('diagnoses',d.diagnoses,[['disease','Record'],['date','Date'],['remarks','Notes']]);
+        renderTable('allergies',d.allergies,[['allergen','Allergen'],['severity','Severity'],['description','Notes']]);
+        renderTable('symptoms',d.symptoms,[['symptom','Symptom'],['severity','Severity'],['duration','Duration']]);
+        renderTable('predictions',d.predictions,[['disease','Label'],['score','Example score'],['level','Example level'],['model','Seed-data model label'],['date','Date']]);
+        byId('profile').hidden=false;byId('sections').hidden=false;byId('status').textContent='Records loaded from local Oracle database.';
+      }catch(e){byId('profile').hidden=true;byId('sections').hidden=true;byId('status').textContent=e.message;byId('status').className='status error';}
+    }
+    byId('load').addEventListener('click',loadRecords);loadPatients();
+  </script>
+</body>
+</html>

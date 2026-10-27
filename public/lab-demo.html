@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lab Technician | Healthcare Research Demo</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#18243b;background:#f3f6fb}*{box-sizing:border-box}body{margin:0}header{background:#182c52;color:white;padding:22px max(20px,calc((100vw - 900px)/2))}header h1{margin:0 0 6px;font-size:23px}header p{margin:0;color:#dde7fb;font-size:14px}main{max-width:900px;padding:0 16px 30px;margin:24px auto}.card{background:white;border:1px solid #d9e2f0;border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 3px 15px #17294d0b}.notice{background:#fff6e9;border:1px solid #ead5ab;padding:13px;border-radius:9px;font-size:13px;color:#60400f;margin-bottom:18px}h2{font-size:18px;margin:0 0 18px}form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}label{display:block;font-size:13px;font-weight:650;margin-bottom:6px}input,select{width:100%;padding:12px;border:1px solid #b4c2da;border-radius:8px;font-size:15px;background:white}button{border:0;border-radius:8px;background:#345fba;padding:12px 15px;font-size:15px;font-weight:650;color:white;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.wide{grid-column:1/-1}.status{min-height:22px;font-size:14px}.error{color:#a02335}.success{color:#116e43}.links a{color:#d8e7ff;margin-right:16px}@media(max-width:650px){form{grid-template-columns:1fr}}
+</style></head>
+<body><header><h1>Lab technician — research demo</h1><p>Save fictional lab results to Oracle</p><nav class="links"><a href="/patient-demo.html">Patient records</a><a href="/doctor-research-demo.html">Doctor research demo</a></nav></header>
+<main><div class="notice">Local demonstration only. This page has no role-based authentication. Do not use real patient data. Values are for software testing, not medical interpretation.</div>
+<section class="card"><h2>Enter fictional laboratory record</h2>
+<form id="labForm">
+<div class="wide"><label for="patientId">Fictional patient</label><select required id="patientId" name="patientId"><option value="">Loading...</option></select></div>
+<div><label for="glucose">Glucose (numeric demo field)</label><input id="glucose" name="glucose" type="number" min="0" max="9999.99" step="0.01" required placeholder="Example: 99"></div>
+<div><label for="bloodPressure">Blood pressure (e.g., 120/80)</label><input id="bloodPressure" name="bloodPressure" maxlength="20" pattern="[0-9]{1,3}/[0-9]{1,3}" required placeholder="Example: 120/80"></div>
+<div><label for="bmi">BMI (numeric demo field)</label><input id="bmi" name="bmi" type="number" min="0" max="999.99" step="0.01" required placeholder="Example: 24.1"></div>
+<div><label for="cholesterol">Cholesterol (numeric demo field)</label><input id="cholesterol" name="cholesterol" type="number" min="0" max="9999.99" step="0.01" required placeholder="Example: 175"></div>
+<div><label for="heartRate">Heart rate (integer demo field)</label><input id="heartRate" name="heartRate" type="number" min="0" max="999" step="1" required placeholder="Example: 72"></div>
+<div class="wide"><button id="save" type="submit">Save fictional lab result</button></div>
+</form><p id="status" class="status" role="status"></p></section>
+<section class="card"><h2>Verify the saved record</h2><p>After saving, open the <a href="/patient-demo.html">Patient records page</a> and select the same fictional patient. The new result should appear at the top of the lab reports table.</p></section>
+</main>
+<script>
+const byId=id=>document.getElementById(id);
+async function loadPatients(){try{const r=await fetch('/api/demo/patients');const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'Unable to load patients');const sel=byId('patientId');sel.replaceChildren();for(const p of d.patients){const opt=document.createElement('option');opt.value=p.id;opt.textContent=`${p.id} — ${p.name}`;sel.append(opt);}}catch(e){byId('status').textContent=e.message;byId('status').className='status error';}}
+byId('labForm').addEventListener('submit',async e=>{
+ e.preventDefault();const form=e.currentTarget;if(!form.reportValidity())return;
+ const payload=Object.fromEntries(new FormData(form).entries());
+ const btn=byId('save');btn.disabled=true;byId('status').textContent='Saving fictional record...';byId('status').className='status';
+ try{const r=await fetch('/api/demo/labs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'Save failed');byId('status').textContent=`Saved to Oracle for ${d.patientId}. Verify in patient records.`;byId('status').className='status success';}
+ catch(err){byId('status').textContent=err.message;byId('status').className='status error';}
+ finally{btn.disabled=false;}
+});loadPatients();
+</script></body></html>

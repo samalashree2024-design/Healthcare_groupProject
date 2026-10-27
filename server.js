@@ -9,7 +9,7 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.static("public"));
 
-require("./ai_routes")(app);
+require("./clinical_demo_routes")(app);
 
 const dbConfig = {
     user: process.env.DB_USER,
