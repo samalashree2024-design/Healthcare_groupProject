@@ -1,0 +1,5 @@
+pandas>=2.2
+numpy>=2.1
+scikit-learn>=1.7.2
+joblib>=1.4
+ucimlrepo>=0.0.7

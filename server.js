@@ -1,3 +1,4 @@
+
 const express = require("express");
 const oracledb = require("oracledb");
 require("dotenv").config();
@@ -7,6 +8,8 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(express.static("public"));
+
+require("./ai_routes")(app);
 
 const dbConfig = {
     user: process.env.DB_USER,

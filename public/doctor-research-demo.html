@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Healthcare Research Demo — Doctor Workspace</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,Arial;background:#f4f7fc;color:#19263d}
+    header{background:#172b51;color:white;padding:22px max(22px,calc((100vw - 1100px)/2))}
+    header h1{margin:0;font-size:23px}header p{margin:4px 0 0;color:#bac9e9}
+    main{max-width:1100px;margin:auto;padding:22px}section{background:white;padding:24px;border:1px solid #e4eafa;border-radius:14px;margin-bottom:18px}
+    h2{margin:0 0 10px;font-size:20px}h3{font-size:16px;margin-bottom:6px}
+    .muted{color:#5b6b83}.notice{border-left:4px solid #c28b2a;background:#fff7e8;padding:12px 15px;border-radius:6px;margin:12px 0 20px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid .full{grid-column:1/-1}
+    label{display:block;font-weight:650;font-size:13px;margin:5px 0}input,select{width:100%;padding:11px;border:1px solid #bdcce2;border-radius:8px;background:#fff;font:inherit}
+    button{background:#2455b5;color:#fff;border:0;border-radius:8px;padding:11px 18px;font:inherit;font-weight:650;cursor:pointer;margin-top:13px}
+    button.secondary{background:#eaf0fa;color:#234b8b}button:hover{filter:brightness(.96)}
+    .status{font-weight:600;margin-top:12px;min-height:24px}.bad{color:#a92026}.good{color:#185a46}
+    table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}th,td{text-align:left;padding:9px;border-bottom:1px solid #e2e8f1;vertical-align:top}th{background:#f7f9fd}
+    .scroller{overflow-x:auto}.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.pill{border-radius:30px;background:#e7eefd;padding:6px 12px;font-size:13px}
+    .subtle{border-top:1px solid #e8edf6;margin-top:16px;padding-top:14px}code{background:#edf2fb;padding:2px 6px;border-radius:4px}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.grid .full{grid-column:auto}main{padding:14px}section{padding:17px}}
+  </style>
+</head>
+<body>
+  <header><h1>Healthcare Research Demo</h1><p>Doctor workspace — prescription timelines and educational disease classifiers</p></header>
+  <main>
+    <div class="notice"><b>Local demonstration only.</b> This screen is not an authenticated hospital system. De-identified prescriptions show recorded orders, not confirmed medication use. This checker does <b>not</b> assess drug interactions, allergies or safe dosing, and ML outputs are not diagnoses.</div>
+    <section>
+      <h2>1. Explore recorded prescriptions</h2>
+      <p class="muted">Select one of the de-identified patients from your MIMIC demo data.</p>
+      <div class="grid"><div><label for="patient">Patient ID</label><select id="patient"><option value="">Loading...</option></select></div><div><button id="loadHistory" class="secondary">Load prescription periods</button></div></div>
+      <div id="historyStatus" class="status"></div>
+      <div class="scroller"><table><thead><tr><th>Medicine label</th><th>Route</th><th>Start</th><th>End</th><th>Grouped records</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+    </section>
+    <section>
+      <h2>2. Screen a proposed prescription period</h2>
+      <p class="muted">This is a date-based screening demonstration. A recorded overlap is <b>not</b> a harmful-interaction alert.</p>
+      <div class="grid">
+        <div class="full"><label for="medicine">Proposed medicine name</label><input id="medicine" value="Example Medicine" required /></div>
+        <div><label for="start">Proposed start</label><input id="start" type="datetime-local" required /></div>
+        <div><label for="end">Proposed end</label><input id="end" type="datetime-local" required /></div>
+      </div>
+      <button id="check">Check recorded overlaps</button>
+      <div id="checkStatus" class="status"></div>
+      <div class="pills" id="summary"></div>
+      <div class="scroller"><table><thead><tr><th>Recorded medicine</th><th>Overlap starts</th><th>Overlap ends</th><th>Hours</th><th>Same recorded name?</th></tr></thead><tbody id="overlapBody"></tbody></table></div>
+      <p class="muted">Drug interaction check: <b>not performed</b> (no verified reference source integrated). Allergy and dosage checks: <b>not performed</b>.</p>
+    </section>
+    <section>
+      <h2>3. Disease classification models</h2>
+      <p class="muted">Models need separate labelled datasets. Train them first using the included UCI training script. This is a research exercise, not an individual medical assessment.</p>
+      <div class="grid"><div><label for="disease">Dataset classifier</label><select id="disease"><option value="heart">Heart disease</option><option value="kidney">Chronic kidney disease</option><option value="diabetes">Early-stage diabetes</option></select></div><div><button id="loadSchema" class="secondary">Load model form</button></div></div>
+      <div id="mlStatus" class="status"></div>
+      <div id="modelFields" class="grid"></div>
+      <button id="predict" hidden>Run educational classifier</button>
+      <div id="prediction" class="status"></div>
+    </section>
+  </main>
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = value => value ? String(value).replace('T',' ').slice(0,19) : '';
+  const bodyRows = (id, rows) => {const node=$(id); node.replaceChildren(); rows.forEach(cols=>{let tr=document.createElement('tr'); cols.forEach(v=>{let td=document.createElement('td');td.textContent=String(v);tr.appendChild(td)}); node.appendChild(tr)})};
+  async function json(url, options){let r=await fetch(url,options);let d=await r.json();if(!r.ok)throw new Error(typeof d.detail==='string'?d.detail:JSON.stringify(d.detail || d));return d}
+  async function startup(){try{
+    const data=await json('/api/research/patients'); const sel=$('patient');sel.replaceChildren();
+    for(const item of data.patients){let o=document.createElement('option');o.value=item.patient;o.textContent=item.patient+' ('+item.grouped_periods+' grouped periods)';sel.appendChild(o)}
+    $('historyStatus').textContent=data.count+' patient IDs loaded. Select a patient and load periods.';
+    await loadHistory();
+  }catch(e){$('historyStatus').textContent='Error: '+e.message;$('historyStatus').className='status bad'}}
+  async function loadHistory(){const id=$('patient').value;if(!id)return;
+    try{const d=await json('/api/research/patients/'+encodeURIComponent(id)+'/history');
+    bodyRows('historyBody',d.periods.map(r=>[r.medicine,r.route,fmt(r.start),fmt(r.end),r.source_prescription_records]));
+    $('historyStatus').textContent=d.total_grouped_periods+' grouped periods recorded; displaying '+d.returned_count+'.';
+    if(d.periods.length){$('start').value=d.periods[0].start.replace(' ','T').slice(0,16);$('end').value=d.periods[0].end.replace(' ','T').slice(0,16);}
+    $('checkStatus').textContent='';$('summary').replaceChildren();bodyRows('overlapBody',[]);
+    }catch(e){$('historyStatus').textContent='Error: '+e.message}}
+  async function check(){let data={patient_id:$('patient').value,medicine_name:$('medicine').value.trim(),start:$('start').value,end:$('end').value};
+    if(!data.start||!data.end||!data.medicine_name){$('checkStatus').textContent='Enter all fields first.';return}
+    try{let d=await json('/api/research/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      $('checkStatus').textContent=d.interpretation;$('checkStatus').className='status';
+      $('summary').replaceChildren();for(const label of [d.recorded_overlap_count+' recorded overlaps',d.same_name_overlap_count+' same-name overlaps',d.previous_same_name_period_count+' previous same-name periods']){let e=document.createElement('span');e.className='pill';e.textContent=label;$('summary').appendChild(e)}
+      bodyRows('overlapBody',d.overlaps.map(r=>[r.medicine,fmt(r.overlap_starts),fmt(r.overlap_ends),r.overlap_hours,r.same_recorded_name?'Yes':'No']));
+      if(d.overlaps_truncated)$('checkStatus').textContent+=' Showing first 100 overlaps.';
+    }catch(e){$('checkStatus').textContent='Error: '+e.message;$('checkStatus').className='status bad'}}
+  let schema=null;
+  async function loadSchema(){schema=null;$('predict').hidden=true;$('modelFields').replaceChildren();$('prediction').textContent='';
+    try{schema=await json('/api/research/models/'+encodeURIComponent($('disease').value)+'/schema');
+      $('mlStatus').textContent=schema.dataset+' — '+schema.target_definition;
+      for(const field of schema.features){let div=document.createElement('div');let label=document.createElement('label');label.textContent=field;div.appendChild(label);
+        let input;if(schema.feature_types[field]==='categorical'){input=document.createElement('select');for(const val of schema.categorical_values[field]){let opt=document.createElement('option');opt.value=val;opt.textContent=val;input.appendChild(opt)}}
+        else {input=document.createElement('input');input.type='number';input.step='any';input.placeholder='Enter '+field}
+        input.dataset.field=field;div.appendChild(input);$('modelFields').appendChild(div)}$('predict').hidden=false;
+    }catch(e){$('mlStatus').textContent='Model unavailable: '+e.message}}
+  async function predict(){if(!schema)return;const features={};for(const node of $('modelFields').querySelectorAll('[data-field]')){features[node.dataset.field]=node.value}
+    try{let r=await json('/api/research/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({disease:$('disease').value,features})});
+      $('prediction').textContent=`Dataset classification: ${r.dataset_class}. Model: ${r.model}. ${r.disclaimer}`;
+    }catch(e){$('prediction').textContent='Error: '+e.message}}
+  $('loadHistory').addEventListener('click',loadHistory);$('patient').addEventListener('change',loadHistory);
+  $('check').addEventListener('click',check);$('loadSchema').addEventListener('click',loadSchema);$('predict').addEventListener('click',predict);
+  startup();
+</script>
+</body>
+</html>
