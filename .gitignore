@@ -3,3 +3,11 @@
 .env.*
 __pycache__/
 *.pyc
+node_modules/
+.venv/
+venv/
+database/data/raw/
+database/data/processed/
+database/ai/models/
+database/ai/reports/
+database/ai/data/
