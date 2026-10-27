@@ -98,6 +98,45 @@
     }catch(e){$('prediction').textContent='Error: '+e.message}}
   $('loadHistory').addEventListener('click',loadHistory);$('patient').addEventListener('change',loadHistory);
   $('check').addEventListener('click',check);$('loadSchema').addEventListener('click',loadSchema);$('predict').addEventListener('click',predict);
+
+
+// Reset the form when the disease changes
+$('disease').addEventListener('change', () => {
+    schema = null;
+    $('modelFields').replaceChildren();
+    $('predict').hidden = true;
+    $('prediction').textContent = '';
+    $('mlStatus').textContent =
+        'Click Load model form for the selected disease.';
+});
+
+// Prevent predictions with missing or mismatched inputs
+$('predict').addEventListener('click', (event) => {
+
+    if (!schema || schema.name !== $('disease').value) {
+        event.stopImmediatePropagation();
+        $('prediction').textContent =
+            'Please load the form for the selected disease.';
+        return;
+    }
+
+    const inputs = [
+        ...$('modelFields').querySelectorAll('[data-field]')
+    ];
+
+    const missing = inputs.find(
+        input => String(input.value).trim() === ''
+    );
+
+    if (missing) {
+        event.stopImmediatePropagation();
+        $('prediction').textContent =
+            'Please fill in: ' + missing.dataset.field;
+        missing.focus();
+    }
+
+}, true);
+
   startup();
 </script>
 </body>
