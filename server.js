@@ -7,9 +7,14 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Role-based login and backend access control
+require("./demo_auth")(app);
+
 app.use(express.static("public"));
 
 require("./clinical_demo_routes")(app);
+require('./medication_history_routes')(app);
 
 const dbConfig = {
     user: process.env.DB_USER,
